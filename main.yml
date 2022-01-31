@@ -1,0 +1,280 @@
+---
+- name: Cisco-ASA VPN STIG Config
+  hosts: all
+  vars_files: secrets/secrets.yml
+  gather_facts: False
+  connection: network_cli
+  become: Yes
+  tasks:
+
+    - name: Gather all legacy facts
+      cisco.asa.asa_facts:
+        gather_subset: all
+
+    - name: CASA-VN-000010 - The Cisco ASA must be configured to generate log records containing information to establish what type of VPN events occurred.
+      cisco.asa.asa_config:
+        lines:
+        - logging class vpn trap notifications 
+        - logging class vpnc trap notifications 
+        - logging class vpnfo trap notifications 
+        - logging class webvpn trap notifications 
+        - logging class webfo trap notifications 
+        - logging class svc trap notifications 
+
+    - name: CASA-VN-000020 - The Cisco ASA must be configured to generate log records containing information to establish when the events occurred.
+      cisco.asa.asa_config:
+        lines:
+        - logging enable
+        - logging timestamp
+
+    - name: CASA-VN-000020 - The Cisco ASA must be configured to queue log records locally in the event that the central audit server is down or not reachable.
+      cisco.asa.asa_config:
+        lines:
+        - logging permit-hostdown
+        - logging queue 8192
+
+    - name: CASA-VN-000090 - The Cisco ASA must be configured to queue log records locally in the event that the central audit server is down or not reachable.
+      cisco.asa.asa_config:
+        lines:
+#        - logging host NDM_INTERFACE 10.1.48.10 6/1514
+        - logging trap critical
+
+    - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. (1/6)
+      cisco.asa.asa_config:
+        lines:
+        - domain-name {{domainName}}
+
+    - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. (2/6)
+      cisco.asa.asa_command:
+        commands:
+        - show crypto key mypubkey rsa
+      register: keyList
+
+    - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. (3/6)
+      cisco.asa.asa_command:
+        commands:
+        - show crypto ca certificates
+      register: certList
+
+    - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. 4/6)
+      cisco.asa.asa_config:
+        lines:
+        - crypto key generate rsa general-keys label {{trustpointName}} modulus 2048
+        defaults: Yes
+      when: 'not keyList is search(trustpointName)'
+
+    - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. (5/6)
+      cisco.asa.asa_config:
+        lines:
+        - enrollment retry count 100
+        - enrollment protocol scep url http://{{trustpointName}}:80/certsrv/mscep/mscep.dll
+        - fqdn {{ansible_net_hostname}}.{{domainName}}
+        - keypair {{trustpointName}}
+        - crl configure
+        parents: crypto ca trustpoint {{trustpointName}}
+
+#    - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. (6/6)
+#      cisco.asa.asa_command:
+#        commands:
+#        - configure terminal
+#        - crypto ca authenticate {{trustpointName}}
+#        - yes
+#        - crypto ca import {{trustpointName}} certificate
+#      when: 'not certList is search(trustpointName)'
+
+    - name: CASA-VN-000130 - The Cisco ASA must be configured to not accept certificates that have been revoked when using PKI for authentication.
+      cisco.asa.asa_config:
+        lines:
+        - revocation-check crl
+        parents: crypto ca trustpoint {{trustpointName}}
+
+#    - name: CASA-VN-000150 - The Cisco ASA must be configured to use Internet Key Exchange (IKE) for all IPsec security associations.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+#    - name: CASA-VN-000160 - The Cisco ASA must be configured to use Internet Key Exchange v2 (IKEv2) for all IPsec security associations.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000170 - The Cisco ASA must be configured to use NIST FIPS-validated cryptography for Internet Key Exchange (IKE) Phase 1.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000180 - The Cisco ASA must be configured to specify Perfect Forward Secrecy (PFS) for the IPsec Security Association (SA) during IKE Phase 2 negotiation.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000190 - The Cisco ASA must be configured to use a FIPS-validated cryptographic module to generate cryptographic hashes.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000200 - The Cisco ASA must be configured to use a FIPS-validated cryptographic module to implement IPsec encryption services.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000210 - The Cisco ASA must be configured to use a Diffie-Hellman (DH) Group of 14 or greater for Internet Key Exchange (IKE) Phase 1.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000230 - The Cisco ASA must be configured to use FIPS-validated SHA-2 or higher for Internet Key Exchange (IKE) Phase 1.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000240 - The Cisco ASA must be configured to use FIPS-validated SHA-2 or higher for Internet Key Exchange (IKE) Phase 2
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000300 - The Cisco ASA VPN gateway must be configured to restrict what traffic is transported via the IPsec tunnel according to flow control policies.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000310 - The Cisco ASA VPN gateway must be configured to identify all peers before establishing a connection.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000340 - The Cisco ASA VPN gateway must use cryptographic algorithms approved by NSA to protect NSS when transporting classified traffic across an unclassified network.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000350 - The Cisco ASA VPN gateway must be configured to renegotiate the IPsec Security Association after eight hours or less.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000360 - The Cisco ASA VPN gateway must be configured to renegotiate the IKE security association after 24 hours or less.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000390 - The Cisco ASA remote access VPN server must be configured to use a separate authentication server than that used for administrative access.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000400 - The Cisco ASA remote access VPN server must be configured to use LDAP over SSL to determine authorization for granting access to the network.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000410 - The Cisco ASA remote access VPN server must be configured to identify and authenticate users before granting access to the network.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000440 - The Cisco ASA remote access VPN server must be configured to enforce certificate-based authentication before granting access to the network.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000450 - The Cisco ASA remote access VPN server must be configured to map the distinguished name (DN) from the client’s certificate to entries in the authentication server to determine authorization to access the network.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+#    - name: CASA-VN-000460 - The Cisco ASA remote access VPN server must be configured to display the Standard Mandatory Notice and Consent Banner before granting access to the network.
+#      cisco.asa.asa_config:
+#        lines:
+#        - 
+
+    - name: CASA-VN-000500 - The Cisco ASA remote access VPN server must be configured to generate log records containing information that establishes the identity of any individual or process associated with the event.
+      cisco.asa.asa_config:
+        lines:
+        - logging class vpn trap notifications 
+        - logging class vpnc trap notifications 
+        - logging class vpnfo trap notifications 
+        - logging class webvpn trap notifications 
+        - logging class webfo trap notifications 
+        - logging class svc trap notifications 
+
+    - name: CASA-VN-000510 - The Cisco ASA remote access VPN server must be configured to generate log records containing information to establish where the events occurred.
+      cisco.asa.asa_config:
+        lines:
+        - logging class vpn trap notifications 
+        - logging class vpnc trap notifications 
+        - logging class vpnfo trap notifications 
+        - logging class webvpn trap notifications 
+        - logging class webfo trap notifications 
+        - logging class svc trap notifications 
+
+    - name: CASA-VN-000520 - The Cisco ASA remote access VPN server must be configured to generate log records containing information to establish the source of the events.
+      cisco.asa.asa_config:
+        lines:
+        - logging class vpn trap notifications 
+        - logging class vpnc trap notifications 
+        - logging class vpnfo trap notifications 
+        - logging class webvpn trap notifications 
+        - logging class webfo trap notifications 
+        - logging class svc trap notifications 
+
+    - name: CASA-VN-000530 - The Cisco ASA remote access VPN server must be configured to produce log records containing information to establish the outcome of the events.
+      cisco.asa.asa_config:
+        lines:
+        - logging class vpn trap notifications 
+        - logging class vpnc trap notifications 
+        - logging class vpnfo trap notifications 
+        - logging class webvpn trap notifications 
+        - logging class webfo trap notifications 
+        - logging class svc trap notifications 
+
+    - name: CASA-VN-000550 - The Cisco ASA remote access VPN server must be configured to use TLS 1.2 or higher to protect the confidentiality of remote access connections.
+      cisco.asa.asa_config:
+        lines:
+        - ssl server-version tlsv1.2 dtlsv1.2
+
+#    - name: CASA-VN-000560 - The Cisco ASA remote access VPN server must be configured to use a FIPS-validated algorithm and hash function to protect the integrity of TLS remote access sessions.
+#      cisco.asa.asa_config:
+#        lines:
+#        - ssl cipher tlsv1.2 fips
+
+#    - name: CASA-VN-000610 - The Cisco ASA remote access VPN server must be configured to generate unique session identifiers using a FIPS-validated Random Number Generator (RNG) based on the Deterministic Random Bit Generators (DRBG) algorithm.
+#      cisco.asa.asa_config:
+#        lines:
+#        - fips enable 
+
+#    - name: CASA-VN-000630 - The Cisco ASA remote access VPN server must be configured to use SHA-2 or greater for hashing to protect the integrity of IPsec remote access sessions.
+#      cisco.asa.asa_config:
+#        lines:
+#        -
+
+#    - name: CASA-VN-000640 - The Cisco VPN remote access server must be configured to use AES encryption for the Internet Key Exchange (IKE) Phase 1 to protect confidentiality of remote access sessions.
+#      cisco.asa.asa_config:
+#        lines:
+#        -
+
+#    - name: CASA-VN-000650 - The Cisco ASA VPN remote access server must be configured to use Advanced Encryption Standard (AES) encryption for the IPsec security association to protect the confidentiality of remote access sessions.
+#      cisco.asa.asa_config:
+#        lines:
+#        -
+
+#    - name: CASA-VN-000660 - The Cisco VPN remote access server must be configured to accept Common Access Card (CAC) credential credentials.
+#      cisco.asa.asa_config:
+#        lines:
+#        -
+
+#    - name: CASA-VN-000700 - The Cisco ASA VPN remote access server must be configured to disable split-tunneling for remote clients.
+#      cisco.asa.asa_config:
+#        lines:
+#        -
+
+    - name: CASA-VN-000720 - The Cisco ASA VPN remote access server must be configured to generate log records when successful and/or unsuccessful VPN connection attempts occur.
+      cisco.asa.asa_config:
+        lines:
+        - logging class svc trap notifications
+
+    - name: CASA-VN-000730 - The Cisco ASA VPN remote access server must be configured to validate certificates used for Transport Layer Security (TLS) functions by performing RFC 5280-compliant certification path validation.
+      cisco.asa.asa_config:
+        lines:
+        - validation-usage ssl-client
+        - validation-usage ipsec-client
+        parents: crypto ca trustpoint {{trustpointName}}
