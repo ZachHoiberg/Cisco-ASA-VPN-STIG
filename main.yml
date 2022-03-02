@@ -1,5 +1,5 @@
 ---
-- name: SAT-ASA VPN STIG Config
+- name: Cisco ASA VPN STIG Config
   hosts: all
   vars_files: secrets/secrets.yml
   gather_facts: True
