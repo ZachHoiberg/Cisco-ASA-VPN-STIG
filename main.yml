@@ -1,8 +1,8 @@
 ---
-- name: Cisco ASA VPN STIG Config
+- name: Cisco-ASA-VPN-STIG
   hosts: all
   vars_files: secrets/secrets.yml
-  gather_facts: True
+  gather_facts: False
   connection: network_cli
   become: Yes
   tasks:
@@ -38,7 +38,7 @@
     - name: CASA-VN-000090 - The Cisco ASA must be configured to queue log records locally in the event that the central audit server is down or not reachable.
       cisco.asa.asa_config:
         lines:
-        - logging host {{loggingInterface}} {{logHost}} 6/1514
+        - logging host {{loggingInterface}} {{logHost}} 6/1514 
         - logging trap notifications
 
     - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. (1/6)
@@ -70,6 +70,7 @@
         lines:
         - enrollment retry count 100
         - enrollment protocol scep url http://{{trustpointIP}}:80/certsrv/mscep/mscep.dll
+        - enrollment interface secure
         - fqdn {{ansible_net_hostname}}.{{domainName}}
         - keypair {{trustpointName}}
         - crl configure
@@ -113,10 +114,10 @@
         - encryption aes-256
         parents: crypto ikev2 policy {{ikev2PolicyID}} 
 
-    - name: CASA-VN-000180 - The Cisco ASA must be configured to specify Perfect Forward Secrecy (PFS) for the IPsec Security Association (SA) during IKE Phase 2 negotiation.
-      cisco.asa.asa_config:
-        lines:
-        - crypto map {{cryptoMapName}} {{cryptoMapID}} set pfs group21
+#    - name: CASA-VN-000180 - The Cisco ASA must be configured to specify Perfect Forward Secrecy (PFS) for the IPsec Security Association (SA) during IKE Phase 2 negotiation.
+#      cisco.asa.asa_config:
+#        lines:
+#        - crypto map {{cryptoMapName}} {{cryptoMapID}} set pfs group21
 
     - name: CASA-VN-000190 - The Cisco ASA must be configured to use a FIPS-validated cryptographic module to generate cryptographic hashes. (1/2)
       cisco.asa.asa_config:
@@ -281,31 +282,31 @@
         - lifetime seconds 86400
         parents: crypto ikev2 policy {{ikev2PolicyID}} 
 
-#TBD
+#Anyconnect only
 #    - name: CASA-VN-000390 - The Cisco ASA remote access VPN server must be configured to use a separate authentication server than that used for administrative access.
 #      cisco.asa.asa_config:
 #        lines:
 #        - 
 
-#TBD
+#Anyconnect only
 #    - name: CASA-VN-000400 - The Cisco ASA remote access VPN server must be configured to use LDAP over SSL to determine authorization for granting access to the network.
 #      cisco.asa.asa_config:
 #        lines:
 #        - 
 
-#TBD
+#Anyconnect only
 #    - name: CASA-VN-000410 - The Cisco ASA remote access VPN server must be configured to identify and authenticate users before granting access to the network.
 #      cisco.asa.asa_config:
 #        lines:
 #        - 
 
-#TBD
+#Anyconnect only
 #    - name: CASA-VN-000440 - The Cisco ASA remote access VPN server must be configured to enforce certificate-based authentication before granting access to the network.
 #      cisco.asa.asa_config:
 #        lines:
 #        - 
 
-#TBD
+#Anyconnect only
 #    - name: CASA-VN-000450 - The Cisco ASA remote access VPN server must be configured to map the distinguished name (DN) from the client’s certificate to entries in the authentication server to determine authorization to access the network. (1/2)
 #      cisco.asa.asa_config:
 #        lines:
@@ -315,7 +316,7 @@
 #        parents: tunnel-group {{anyConnectTunnelGroupList[0]}} general-attributes
 #      when: 'anyConnectTunnelGroupList[0] == anyConnectTunnelGroupList[-1] and anyConnectTunnelGroupList[0] != ""''
 
-#TBD
+
 #    - name: CASA-VN-000450 - The Cisco ASA remote access VPN server must be configured to map the distinguished name (DN) from the client’s certificate to entries in the authentication server to determine authorization to access the network. (2/2)
 #      cisco.asa.asa_config:
 #        lines:
@@ -414,7 +415,7 @@
         - protocol esp encryption aes-256
         parents: crypto ipsec ikev2 ipsec-proposal {{ipsecProposalID}} 
 
-#TBD
+#Anyconnect only
 #    - name: CASA-VN-000660 - The Cisco VPN remote access server must be configured to accept Common Access Card (CAC) credential credentials. (1/2)
 #      cisco.asa.asa_config:
 #        lines:
