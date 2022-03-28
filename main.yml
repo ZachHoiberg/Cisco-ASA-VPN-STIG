@@ -76,6 +76,7 @@
         - crl configure
         parents: crypto ca trustpoint {{trustpointName}}
 
+#Waiting for asa_command to support prompts
 #    - name: CASA-VN-000120 - The Cisco ASA must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider. (6/6)
 #      cisco.asa.asa_command:
 #        commands:
