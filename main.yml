@@ -92,7 +92,7 @@
         parents: crypto ca trustpoint {{trustpointName}}
 
     - name: Grabbing running config
-      ios_command:
+      cisco.asa.asa_command:
         commands: show running-config | include crypto .* enable
       register: running_config
 
@@ -162,7 +162,7 @@
         - crypto map {{cryptoMapName}} {{cryptoMapID}} set ikev2 ipsec-proposal {{ipsecProposalID}}
 
     - name: Grabbing running config
-      ios_command:
+      cisco.asa.asa_command:
         commands: show running-config | include access-list {{cryptoMapACLName}}
       register: running_config
 
@@ -190,7 +190,7 @@
         - crypto map {{cryptoMapName}} {{cryptoMapID}} match address {{cryptoMapACLName}}
 
     - name: Grabbing running config
-      ios_command:
+      cisco.asa.asa_command:
         commands: show running-config all tunnel-group
       register: running_config
 
@@ -228,7 +228,7 @@
       when: 'tunnelGroupList[0] == tunnelGroupList[-1] and tunnelGroupList[0] != "" and not running_config.stdout[0] is regex("tunnel-group "+tunnelGroupList[0]+" ipsec-attributes\\n no ikev1 pre-shared-key\\n peer-id-validate req\\n no chain\\n no ikev1 trust-point\\n isakmp keepalive threshold 10 retry 2")'
 
     - name: Grabbing running config
-      ios_command:
+      cisco.asa.asa_command:
         commands: show running-config 
       register: running_config
 
@@ -324,7 +324,7 @@
 #        parents: group policy {{groupPolicyName}} attributes
 
     - name: Grabbing running config
-      ios_command:
+      cisco.asa.asa_command:
         commands: show running-config | include banner login
       register: running_config
 
